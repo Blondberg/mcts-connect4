@@ -11,7 +11,7 @@ I highly recommend checking them out!
 
 
 class C4BitBoard(object):
-    def __init__(self, player=0, mask=0, width=7, height=6):
+    def __init__(self, player: int = 0, mask: int = 0, width=7, height=6):
         """Constructor for bitboard
 
         Args:
@@ -67,7 +67,7 @@ class C4BitBoard(object):
         """
         return 1 << col * (self.height + 1)
 
-    def play(self, col: int) -> bool:
+    def play(self, col: int):
         self.current_player ^= self.mask  # Switch to opponent player
         move = self.mask + self.bottom_cell_mask(col)
         self.mask |= move
@@ -165,6 +165,21 @@ class C4BitBoard(object):
 
     def get_legal_moves(self):
         return [col for col in range(self.width) if self.can_play(col)]
+
+    def clone(self):
+        return C4BitBoard(
+            player=self.current_player,
+            mask=self.mask,
+            width=self.width,
+            height=self.height,
+        )
+
+    def make_move(self, col: int):
+        new = self.clone()
+        move = new.mask + new.bottom_cell_mask(col)
+        new.mask |= move
+        new.current_player ^= new.mask
+        return new
 
 
 if __name__ == "__main__":
