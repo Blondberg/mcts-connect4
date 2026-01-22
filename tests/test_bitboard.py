@@ -1,5 +1,6 @@
 import pytest
 from src.bitboard import C4BitBoard
+from src.mcts_bitboard import mcts_search
 
 
 def test_bottom_cell_mask():
@@ -32,33 +33,68 @@ def test_get_legal_moves_initial():
     assert bb.get_legal_moves() == list(range(bb.width))
 
 
-def test_is_winning_move():
+def test_blocking():
+    bb = C4BitBoard()
+    moves = [0, 1, 1, 2, 2]
+
+
+@pytest.mark.parametrize(
+    "moves, winning_col",
+    [
+        # Horizontal win
+        ([0, 6, 1, 6, 2, 6], 3),
+        # Vertical win
+        ([6, 0, 6, 1, 6, 2], 6),
+        # Down-right diagonal win
+        ([6, 5, 5, 4, 4, 3, 4, 3, 3, 2], 3),
+        # Up-right diagonal win
+        ([0, 1, 1, 2, 2, 3, 2, 3, 3, 4], 3),
+    ],
+)
+def test_is_winning_move(moves, winning_col):
     bb = C4BitBoard(width=7, height=6)
+    for col in moves:
+        bb.play(col)
+    assert bb.is_winning_move(winning_col)
 
-    # Horizontal check
-    moves = [0, 6, 1, 6, 2, 6]
+
+@pytest.mark.parametrize(
+    "moves, expected_move",
+    [
+        # Horizontal win
+        ([0, 6, 1, 6, 2, 6], 3),
+        # Vertical win
+        ([6, 0, 6, 1, 6, 2], 6),
+        # Down-right diagonal win
+        ([6, 5, 5, 4, 4, 3, 4, 3, 3, 2], 3),
+        # Up-right diagonal win
+        ([0, 1, 1, 2, 2, 3, 2, 3, 3, 4], 3),
+    ],
+)
+def test_mcts_winning_move(moves, expected_move):
+    bb = C4BitBoard(width=7, height=6)
     for col in moves:
         bb.play(col)
 
-    assert bb.is_winning_move(3)
+    # Run MCTS
+    move = mcts_search(bb, iterations=2000)
+    assert move == expected_move
 
-    # Vertical check
-    moves = [6, 0, 6, 1, 6, 2]
+
+@pytest.mark.parametrize(
+    "moves, blocking_col",
+    [
+        ([0, 1, 2, 3, 4, 5, 6, 0, 1, 0, 1, 0], 0),
+    ],
+)
+def test_mcts_blocking(moves, blocking_col):
+    bb = C4BitBoard(width=7, height=6)
     for col in moves:
         bb.play(col)
 
-    assert bb.is_winning_move(6)
-
-    # Down right check
-    moves = [6, 5, 5, 4, 4, 3, 4, 3, 3, 2]
-    for col in moves:
-        bb.play(col)
-
-    assert bb.is_winning_move(3)
-
-    # Up right check
-    moves = [0, 1, 1, 2, 2, 3, 2, 3, 3, 4]
-    for col in moves:
-        bb.play(col)
-
-    assert bb.is_winning_move(3)
+    # Run MCTS
+    move = mcts_search(bb, iterations=2000)
+    bb.print_player()
+    bb.print_mask()
+    # Assert AI blocks the immediate threat
+    assert move == blocking_col
