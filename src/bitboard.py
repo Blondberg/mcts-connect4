@@ -26,6 +26,9 @@ class C4BitBoard(object):
         self.current_player = player  # current player tokens
         self.mask = mask  # all tokens
 
+    def column_mask(self, col: int) -> int:
+        return (1 << self.height) - 1 << col * (self.height + 1)
+
     def top_playable_cell_mask(self, col: int) -> int:
         """Returns a bitmask with the top playable cell (i.e. disregarding the sentinel row).
 
@@ -45,7 +48,7 @@ class C4BitBoard(object):
         Returns:
             int: Bitmask of top playable cell of column.
         """
-        return 1 << self.height - 1 << col * (self.height + 1)
+        return 1 << ((self.height - 1) + col * (self.height + 1))
 
     def bottom_cell_mask(self, col: int) -> int:
         """Returns a bitmask with the bottom cell.
@@ -67,20 +70,22 @@ class C4BitBoard(object):
         """
         return 1 << col * (self.height + 1)
 
+    def switch_player(self):
+        self.current_player ^= self.mask
+
     def play(self, col: int):
         self.current_player ^= self.mask  # Switch to opponent player
         move = self.mask + self.bottom_cell_mask(col)
         self.mask |= move
 
     def play_without_switch(self, col: int):
-        """Drop a token for the current_player without switching players.
+        """Drop a token for the current player without switching players.
 
         Args:
             col (int): Column to drop into.
         """
         move = self.mask + self.bottom_cell_mask(col)
         self.mask |= move
-        self.current_player |= move
 
     def is_win(self, bitboard) -> bool:
         """Check if bitboard has a winning position.
@@ -135,33 +140,30 @@ class C4BitBoard(object):
         Returns:
             bool: True if it is a win, else False.
         """
-        pos = self.current_player
-        move = self.mask + self.bottom_cell_mask(col)
-        pos |= move
+        move = (self.mask + self.bottom_cell_mask(col)) & self.column_mask(col)
+        pos = self.current_player | move
 
         return self.is_win(pos)
 
-    def print_mask(self):
-        """Prints bitboard for mask"""
-        print("###### MASK ######")
-        for row in reversed(range(self.height + 1)):
+    def print_bitboard(self, bits: int, label=""):
+        if label:
+            print(f"###### {label} ######")
+        for row in reversed(range(self.height)):
             line = []
             for col in range(self.width):
                 bit = 1 << (col * (self.height + 1) + row)
-                line.append("1" if (self.mask & bit) else ".")
+                line.append("1" if (bits & bit) else ".")
             print(" ".join(line))
-        print("##################")
+        print("########################")
 
-    def print_player(self):
-        """Prints bitboard for current player"""
-        print("###### Player ######")
-        for row in reversed(range(self.height + 1)):
-            line = []
-            for col in range(self.width):
-                bit = 1 << (col * (self.height + 1) + row)
-                line.append("1" if (self.current_player & bit) else ".")
-            print(" ".join(line))
-        print("##################")
+    def print_current_player(self):
+        self.print_bitboard(self.current_player, label="Current player")
+
+    def print_last_player(self):
+        self.print_bitboard(self.mask ^ self.current_player, label="Last player")
+
+    def print_mask(self):
+        self.print_bitboard(self.mask, label="Mask")
 
     def get_legal_moves(self):
         return [col for col in range(self.width) if self.can_play(col)]
@@ -176,9 +178,7 @@ class C4BitBoard(object):
 
     def make_move(self, col: int):
         new = self.clone()
-        move = new.mask + new.bottom_cell_mask(col)
-        new.mask |= move
-        new.current_player ^= new.mask
+        new.play(col)
         return new
 
 

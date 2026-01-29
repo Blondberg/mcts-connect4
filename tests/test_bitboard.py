@@ -33,11 +33,6 @@ def test_get_legal_moves_initial():
     assert bb.get_legal_moves() == list(range(bb.width))
 
 
-def test_blocking():
-    bb = C4BitBoard()
-    moves = [0, 1, 1, 2, 2]
-
-
 @pytest.mark.parametrize(
     "moves, winning_col",
     [
@@ -73,11 +68,12 @@ def test_is_winning_move(moves, winning_col):
 )
 def test_mcts_winning_move(moves, expected_move):
     bb = C4BitBoard(width=7, height=6)
+
     for col in moves:
         bb.play(col)
 
     # Run MCTS
-    move = mcts_search(bb, iterations=2000)
+    move = mcts_search(bb, iterations=10000)
     assert move == expected_move
 
 
@@ -93,8 +89,7 @@ def test_mcts_blocking(moves, blocking_col):
         bb.play(col)
 
     # Run MCTS
-    move = mcts_search(bb, iterations=2000)
-    bb.print_player()
-    bb.print_mask()
+    move = mcts_search(bb, iterations=10000)
+
     # Assert AI blocks the immediate threat
     assert move == blocking_col
