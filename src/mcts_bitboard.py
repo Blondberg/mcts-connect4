@@ -6,7 +6,7 @@ CENTER_ORDER = [3, 2, 4, 1, 5, 0, 6]
 
 
 class MCTSNode:
-    def __init__(self, state: C4BitBoard, parent: MCTSNode = None, move: int = None):
+    def __init__(self, state: C4BitBoard, parent: "MCTSNode" = None, move: int = None):
         self.state = state
         self.parent = parent
         self.move = move
