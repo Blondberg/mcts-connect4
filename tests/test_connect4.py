@@ -1,4 +1,4 @@
-from src.connect4 import Board
+# from src.connect4 import Board
 
 # import numpy as np
 
